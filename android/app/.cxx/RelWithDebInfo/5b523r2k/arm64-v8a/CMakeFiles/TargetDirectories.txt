@@ -1,0 +1,2 @@
+C:/Users/emmad/Desktop/FlutterApps/archive/android/app/.cxx/RelWithDebInfo/5b523r2k/arm64-v8a/CMakeFiles/edit_cache.dir
+C:/Users/emmad/Desktop/FlutterApps/archive/android/app/.cxx/RelWithDebInfo/5b523r2k/arm64-v8a/CMakeFiles/rebuild_cache.dir
