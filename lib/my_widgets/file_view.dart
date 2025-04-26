@@ -1,10 +1,15 @@
+import 'dart:io';
+
 import 'package:archive/config/globals.dart';
 import 'package:archive/config/theme.dart';
 import 'package:archive/models/my_file.dart';
+import 'package:archive/my_widgets/alerts.dart';
 import 'package:archive/my_widgets/context_menu.dart';
 import 'package:archive/screens/error_screen.dart';
 import 'package:archive/screens/loading_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
+import 'package:url_launcher/url_launcher.dart';
 
 class FileView extends StatefulWidget {
   final MyFile file;
@@ -28,6 +33,40 @@ class _FileViewState extends State<FileView> {
         item: item,
       ),
     );
+  }
+
+  void openExternally() async {
+    const imageExt = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
+    const videoExt = ['.mp4', '.mov', '.wmv', '.avi', '.flv', '.mkv', '.webm'];
+
+    // print(p.extension(file.path));
+
+    try {
+      if (!imageExt.contains(p.extension(widget.file.path))) {
+        if (!await launchUrl(Uri.parse(widget.file.path))) {
+          if (mounted) {
+            alertFunction(context, "Could not launch file", () {
+              Navigator.pop(context);
+              Navigator.pop(context);
+            });
+          }
+          // print('Could not launch ${widget.file.path}');
+        } else {
+          Navigator.pop(context);
+        }
+      }
+    } catch (e) {
+      alertFunction(context, "Could not launch file ${e.toString()}", () {
+        Navigator.pop(context);
+        Navigator.pop(context);
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    openExternally();
   }
 
   @override
