@@ -33,7 +33,9 @@ class _FileFormState extends State<FileForm> {
 
   final GlobalKey<FormState> _fileKey = GlobalKey<FormState>();
 
+  // ignore: unused_field
   final TextEditingController _name = TextEditingController();
+  // ignore: unused_field
   final TextEditingController _file = TextEditingController();
   final TextEditingController _folder = TextEditingController();
 
@@ -85,6 +87,7 @@ class _FileFormState extends State<FileForm> {
           return value.get(MyFile.baseSubFolderName);
         });
 
+        // ignore: avoid_print
         print("------$existingFolders");
 
         if (existingFolders.contains(_folder.text)) {
