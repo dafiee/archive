@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 
 class FileView extends StatefulWidget {
   final MyFile file;
+
   const FileView({super.key, required this.file});
 
   @override
@@ -31,6 +32,7 @@ class _FileViewState extends State<FileView> {
 
   @override
   Widget build(BuildContext context) {
+    // print(widget.file.path);
     return Scaffold(
       body: SafeArea(
         child: Stack(
@@ -41,19 +43,30 @@ class _FileViewState extends State<FileView> {
                   imageTapped = !imageTapped;
                 });
               },
+              onLongPress: () {
+                showContextAction(widget.file);
+              },
               child: Container(
                 color: Colors.red.withAlpha(0),
                 child: Column(
                   children: [
                     Expanded(
-                      child: Image.network(
-                        widget.file.path,
-                        loadingBuilder: (context, child, loadingProgress) =>
-                            LoadingScreen(
-                          loadingMessage: "Retrieving your file from cloud...",
-                        ),
-                        errorBuilder: (context, object, trace) => ErrorScreen(
-                          errorMessage: "Media could not be loaded",
+                      child: InteractiveViewer(
+                        child: Image.network(
+                          widget.file.path,
+                          // fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) {
+                              return child;
+                            }
+                            return LoadingScreen(
+                              loadingMessage:
+                                  "Retrieving your file from cloud...",
+                            );
+                          },
+                          errorBuilder: (context, object, trace) => ErrorScreen(
+                            errorMessage: "Media could not be loaded",
+                          ),
                         ),
                       ),
                     ),
