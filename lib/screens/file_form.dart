@@ -57,7 +57,7 @@ class _FileFormState extends State<FileForm> {
               vertical: 8.0,
             ),
             child: LinearProgressIndicator(
-              value: progress,
+              // value: progress,
               minHeight: 10,
               borderRadius: BorderRadius.circular(AppTheme.sxLarge),
             ),
