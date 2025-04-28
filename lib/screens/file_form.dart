@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:io';
 
 import 'package:archive/config/globals.dart';
@@ -14,6 +16,8 @@ import 'package:path/path.dart' as p;
 
 class FileForm extends StatefulWidget {
   final bool withFolder;
+
+  /// If `reference` is non-null, we upload into that subcollection instead of the root.
   final CollectionReference? reference;
 
   const FileForm({
@@ -27,193 +31,150 @@ class FileForm extends StatefulWidget {
 }
 
 class _FileFormState extends State<FileForm> {
-  double progress = 1;
+  final GlobalKey<FormState> _fileKey = GlobalKey<FormState>();
+  final _folderCtrl = TextEditingController();
+
   Set<File> files = {};
   Set<File> uploadedFiles = {};
+  double progress = 0.0;
 
-  final GlobalKey<FormState> _fileKey = GlobalKey<FormState>();
-
-  // ignore: unused_field
-  final TextEditingController _name = TextEditingController();
-  // ignore: unused_field
-  final TextEditingController _file = TextEditingController();
-  final TextEditingController _folder = TextEditingController();
-
-  showProgress(BuildContext context, String title) {
+  /// Show a non-dismissible progress dialog.
+  void _showProgressDialog() {
     showDialog(
       context: context,
-      builder: (_) => PopScope(
-        canPop: false,
-        child: AlertDialog(
-          icon: Icon(
-            Icons.cloud_upload_rounded,
-            size: 50,
-            color: Colors.green[700],
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        icon: const Icon(Icons.cloud_upload_rounded,
+            size: 50, color: Colors.blue),
+        title: const Text("Uploading…"),
+        content: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: LinearProgressIndicator(
+            value: files.isEmpty ? null : progress,
+            minHeight: 8,
+            borderRadius: BorderRadius.circular(8),
+            backgroundColor: Colors.grey.shade200,
           ),
-          title: Text("Uploading, hang tight ..."),
-          content: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 8.0,
-            ),
-            child: LinearProgressIndicator(
-              // value: progress,
-              minHeight: 10,
-              borderRadius: BorderRadius.circular(AppTheme.sxLarge),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text("Cancel"),
-            ),
-          ],
         ),
       ),
     );
   }
 
-  Future save() async {
-    CollectionReference fileRef = widget.reference ?? MyFile.getRef();
-    DateTime timestamp = DateTime.now();
-
-    if (widget.withFolder) {
-      if (_fileKey.currentState!.validate()) {
-        showPreloader(context, "Creating Folder...");
-        List existingFolders =
-            await fileRef.doc(MyFile.baseSubFolderName).get().then((value) {
-          return value.get(MyFile.baseSubFolderName);
-        });
-
-        // ignore: avoid_print
-        print("------$existingFolders");
-
-        if (existingFolders.contains(_folder.text)) {
-          if (mounted) {
-            Navigator.pop(context); //removes preloader
-            alert(context, "Folder already exists");
-          }
-          return;
-        }
-
-        existingFolders.add(_folder.text);
-
-        //creates new folder and adds a folders document with an empty folders lists
-        await fileRef
-            .doc(MyFile.baseSubFolderName)
-            .collection(_folder.text)
-            .doc(MyFile.baseSubFolderName)
-            .set({MyFile.baseSubFolderName: []});
-
-        //updates folders list (string) in current document or folder
-        await fileRef
-            .doc(MyFile.baseSubFolderName)
-            .set({MyFile.baseSubFolderName: existingFolders});
-
-        if (mounted) {
-          Navigator.pop(context);
-          Navigator.pop(context);
-        }
-        return;
-      } else {
-        return;
-      }
-    }
-
-    String path = "";
-    showProgress(context, "Uploading files");
-
-    for (File file in files) {
-      path = await upload(file) ?? "";
-
-      if (path.isEmpty) {
-        return;
-      }
-
-      MyFile myFile = MyFile(
-        name: p.basename(file.path),
-        path: path,
-        timestamp: timestamp,
-      );
-
-      await fileRef.doc(timestamp.toString()).set(myFile.toMap());
-    }
-
-    if (mounted) {
-      Navigator.pop(context);
-      Navigator.pop(context);
-    }
-  }
-
-  // Future save() async {
-  //   if (_fileKey.currentState!.validate()) {
-  //     MyFile file = MyFile(
-  //       name: _name.text,
-  //       path: _file.text,
-  //       timestamp: DateTime.now(),
-  //     );
-  //
-  //     // showPreloader(context, 'Working on it...');
-  //     showProgress(context, "");
-  //     await file.getRef().add(file.toMap()).then((_) {
-  //       if (mounted) {
-  //         Navigator.pop(context);
-  //         alertSuccessPreloaderFunction(
-  //           context,
-  //           "Saved and secured!",
-  //           () => Navigator.pop(context),
-  //         );
-  //       }
-  //     });
-  //   }
-  // }
-
-  void selectFiles() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      allowMultiple: true,
-    );
-
+  /// Let user pick one or more files.
+  Future<void> selectFiles() async {
+    final result = await FilePicker.platform.pickFiles(allowMultiple: true);
     if (result != null) {
       setState(() {
-        files = result.paths.map((path) => File(path!)).toSet();
+        files = result.paths.map((p) => File(p!)).toSet();
       });
     }
   }
 
+  /// Upload a single file, updating `progress`.
   Future<String?> upload(File file) async {
     try {
-      var fileRef = storage.ref().child('files/${p.basename(file.path)}');
-      fileRef.putFile(file).snapshotEvents.listen((taskSnapshot) {
-        switch (taskSnapshot.state) {
-          case TaskState.running:
-            setState(() {
-              progress =
-                  (taskSnapshot.bytesTransferred / taskSnapshot.totalBytes);
-            });
-            break;
-          case TaskState.paused:
-            // ...
-            break;
-          case TaskState.success:
-            setState(() {
-              uploadedFiles.add(file);
-            });
-            break;
-          case TaskState.canceled:
-            // ...
-            break;
-          case TaskState.error:
-            // ...
-            break;
-        }
+      final ref = storage.ref().child('files/${p.basename(file.path)}');
+      final task = ref.putFile(file);
+
+      task.snapshotEvents.listen((snap) {
+        setState(() {
+          progress = snap.totalBytes > 0
+              ? snap.bytesTransferred / snap.totalBytes
+              : 0.0;
+          if (snap.state == TaskState.success) {
+            uploadedFiles.add(file);
+          }
+        });
       });
-      return await fileRef.getDownloadURL();
+
+      final snapshot = await task.whenComplete(() {});
+      return await snapshot.ref.getDownloadURL();
     } on FirebaseException catch (e) {
-      alert(context, e.toString());
+      alertFunction(context, "Upload failed: ${e.message}", () {
+        Navigator.of(context).pop(); // dismiss
+      });
+      return null;
     }
-    return null;
+  }
+
+  /// Main save() entrypoint: handles both folder and file branches.
+  Future<void> save() async {
+    final fileRef = widget.reference ?? MyFile.getRef();
+
+    // ── Folder creation branch ─────────────────────────────────────────────
+    if (widget.withFolder) {
+      if (!_fileKey.currentState!.validate()) return;
+      showPreloader(context, "Creating Folder...");
+      final baseDoc = fileRef.doc(MyFile.baseSubFolderName);
+      final existing = await baseDoc.get().then((snap) {
+        return List<String>.from(snap.get(MyFile.baseSubFolderName));
+      });
+
+      final name = _folderCtrl.text.trim();
+      if (existing.contains(name)) {
+        Navigator.of(context).pop(); // hide preloader
+        alert(context, "Folder already exists");
+        return;
+      }
+      existing.add(name);
+
+      // create the sub-collection
+      await baseDoc
+          .collection(name)
+          .doc(MyFile.baseSubFolderName)
+          .set({MyFile.baseSubFolderName: []});
+
+      // update the folder list
+      await baseDoc.set({MyFile.baseSubFolderName: existing});
+
+      Navigator.of(context).pop(); // hide preloader
+      Navigator.of(context).pop(); // close sheet
+      return;
+    }
+
+    // ── File upload branch ─────────────────────────────────────────────────
+    if (files.isEmpty) {
+      debugPrint("[FileForm] no files to upload");
+      return;
+    }
+
+    _showProgressDialog(); // show the blocking dialog
+
+    try {
+      // Upload each file one by one (or parallel, up to you)
+      for (final file in files) {
+        final url = await upload(file);
+        if (url == null) throw Exception("Upload failed for ${file.path}");
+
+        final myFile = MyFile(
+          name: p.basename(file.path),
+          path: url,
+          timestamp: DateTime.now(),
+        );
+
+        // .add() creates a new doc with a unique ID
+        await fileRef.add(myFile.toMap());
+      }
+    } catch (e) {
+      // If anything goes wrong, pop the progress dialog and show an error
+      Navigator.of(context).pop(); // dismiss progress
+      alertFunction(context, "Upload failed: $e", () {
+        Navigator.of(context).pop(); // dismiss form
+      });
+      return;
+    }
+
+    // all done!
+    if (mounted) {
+      Navigator.of(context).pop(); // dismiss progress
+      Navigator.of(context).pop(); // dismiss form sheet
+    }
+  }
+
+  @override
+  void dispose() {
+    _folderCtrl.dispose();
+    super.dispose();
   }
 
   @override
@@ -230,6 +191,7 @@ class _FileFormState extends State<FileForm> {
             size: 60,
             color: AppTheme.bubble,
           ),
+          const SizedBox(height: 8),
           Text(
             widget.withFolder ? "Create Folder" : "Upload File",
             style: AppTheme.medium.copyWith(
@@ -237,96 +199,51 @@ class _FileFormState extends State<FileForm> {
               fontWeight: FontWeight.normal,
             ),
           ),
-          SizedBox(
-            height: 20,
-          ),
-          if (widget.withFolder)
+          const SizedBox(height: 20),
+          if (widget.withFolder) ...[
             MyInput(
-              label: "Folder",
-              hint: "eg. picnic",
-              prefix: Icons.folder_open_rounded,
-              // autoFocus: true,
-              controller: _folder,
-              validator: validator,
+              label: "Folder name",
+              hint: "e.g. summer_trip",
+              prefix: Icons.folder_open,
+              controller: _folderCtrl,
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? "Required" : null,
             ),
-          if (!widget.withFolder)
+          ] else ...[
             ElevatedButton.icon(
               onPressed: selectFiles,
-              icon: Icon(Icons.add_rounded),
-              label: Text("Add File"),
+              icon: const Icon(Icons.add_rounded),
+              label: const Text("Select files"),
             ),
-          if (!widget.withFolder)
-            ConstrainedBox(
-              constraints: BoxConstraints(maxHeight: screenSize.height * .3),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: SingleChildScrollView(
-                  child: Card(
-                    child: Column(
-                      children: files
-                          .map((file) => Column(
-                                children: [
-                                  ListTile(
-                                    leading: Icon(Icons.image_outlined),
-                                    title: Text(
-                                      p.basename(file.path),
-                                    ),
-                                    trailing: IconButton(
-                                      onPressed: () {
-                                        setState(() {
-                                          files.remove(file);
-                                        });
-                                      },
-                                      visualDensity: VisualDensity.compact,
-                                      icon: Icon(
-                                        Icons.delete_outline_rounded,
-                                        color: AppTheme.error,
-                                      ),
-                                    ),
-                                  ),
-                                  Divider(),
-                                ],
-                              ))
-                          .toList(),
-                    ),
+            const SizedBox(height: 8),
+            if (files.isNotEmpty)
+              ...files.map((f) {
+                final name = p.basename(f.path);
+                return ListTile(
+                  leading: const Icon(Icons.insert_drive_file),
+                  title: Text(name),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: () {
+                      setState(() => files.remove(f));
+                    },
                   ),
-                ),
-              ),
-            ),
-          // Padding(
-          //   padding: const EdgeInsets.symmetric(
-          //     horizontal: 16.0,
-          //     vertical: 8.0,
-          //   ),
-          //   child: LinearProgressIndicator(
-          //     value: 23 / 100,
-          //     minHeight: 10,
-          //     borderRadius: BorderRadius.circular(AppTheme.sxLarge),
-          //   ),
-          // ),
+                );
+              }),
+          ],
+          const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              // ElevatedButton.icon(
-              //   onPressed: save,
-              //   icon: Icon(
-              //     Icons.cloud_upload_rounded,
-              //   ),
-              //   label: Text("Archive"),
-              // ),
               if (files.isNotEmpty || widget.withFolder)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: MyButton(
-                    onPressedAction: save,
-                    label: widget.withFolder ? "Create Folder" : "Archive",
-                    width: screenSize.width * .5,
-                    leadingIcon: Icons.cloud_upload_rounded,
-                    color: Colors.blue[900],
-                  ),
+                MyButton(
+                  onPressedAction: save,
+                  label: widget.withFolder ? "Create Folder" : "Start Upload",
+                  leadingIcon: Icons.cloud_upload_rounded,
+                  width: screenSize.width * 0.5,
                 ),
             ],
-          )
+          ),
         ],
       ),
     );

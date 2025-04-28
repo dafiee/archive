@@ -43,3 +43,24 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+
+# Native Android build artifacts
+android/app/.cxx/
+android/.gradle/
+android/local.properties
+
+# iOS / macOS Flutter build artifacts
+ios/Pods/
+ios/Flutter/Flutter.framework
+ios/Flutter/Generated.xcconfig
+macos/Flutter/ephemeral/
+
+# Linux & Windows Flutter plugin registrant files
+linux/flutter/generated_plugin_registrant.*
+linux/flutter/generated_plugins.cmake
+windows/flutter/generated_plugin_registrant.*
+windows/flutter/generated_plugins.cmake
+
+# Optional: if you don’t want to check in your VS Code workspace settings
+.vscode/

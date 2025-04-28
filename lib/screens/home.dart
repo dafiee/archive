@@ -337,6 +337,7 @@
 //   }
 // }
 
+// ignore_for_file: curly_braces_in_flow_control_structures
 
 import 'package:archive/config/globals.dart';
 import 'package:archive/config/theme.dart';
@@ -353,6 +354,7 @@ import 'package:archive/screens/loading_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -421,6 +423,66 @@ class _HomeState extends State<Home> {
     await FirebaseAuth.instance.signOut();
     // ignore: use_build_context_synchronously
     Navigator.pushReplacementNamed(context, '/');
+  }
+
+  /// Returns the Material icon that best represents [fileName].
+  IconData fileIcon(String fileName) {
+    final ext = p.extension(fileName).toLowerCase();
+
+    // images
+    if (['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'].contains(ext)) {
+      return Icons.image_outlined;
+    }
+    // PDF
+    if (ext == '.pdf') return Icons.picture_as_pdf;
+    // Word
+    if (['.doc', '.docx'].contains(ext)) return Icons.article;
+    // Excel
+    if (['.xls', '.xlsx'].contains(ext)) return Icons.grid_on;
+    // Text
+    if (ext == '.txt') return Icons.text_snippet;
+    // Video
+    if (['.mp4', '.mov', '.wmv', '.avi', '.mkv', '.flv', '.webm']
+        .contains(ext)) {
+      return Icons.videocam;
+    }
+    // **Audio**
+    if (['.mp3', '.wav', '.m4a', '.aac', '.ogg', '.flac', '.wma']
+        .contains(ext)) {
+      return Icons.audiotrack;
+    }
+    // fallback
+    return Icons.insert_drive_file;
+  }
+
+  /// Returns a color for that file-type icon.
+  Color fileIconColor(String fileName) {
+    final ext = p.extension(fileName).toLowerCase();
+
+    // images
+    if (['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'].contains(ext)) {
+      return Colors.blueGrey;
+    }
+    // PDF
+    if (ext == '.pdf') return Colors.redAccent;
+    // Word
+    if (['.doc', '.docx'].contains(ext)) return Colors.blue;
+    // Excel
+    if (['.xls', '.xlsx'].contains(ext)) return Colors.green;
+    // Text
+    if (ext == '.txt') return Colors.grey;
+    // Video
+    if (['.mp4', '.mov', '.wmv', '.avi', '.mkv', '.flv', '.webm']
+        .contains(ext)) {
+      return Colors.deepPurple;
+    }
+    // **Audio**
+    if (['.mp3', '.wav', '.m4a', '.aac', '.ogg', '.flac', '.wma']
+        .contains(ext)) {
+      return Colors.orange;
+    }
+    // fallback
+    return Colors.grey;
   }
 
   @override
@@ -584,19 +646,20 @@ class _HomeState extends State<Home> {
                                   child: Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: Hero(
-                                      tag: items[index] is MyFile
-                                          ? items[index].name.toString()
-                                          : items[index].id.toString(),
-                                      child: Icon(
-                                        items[index] is MyFile
-                                            ? Icons.image_outlined
-                                            : Icons.folder_rounded,
-                                        size: 80,
-                                        color: items[index] is MyFile
-                                            ? Colors.blueGrey
-                                            : Colors.amber[700],
-                                      ),
-                                    ),
+                                        tag: items[index] is MyFile
+                                            ? items[index].name.toString()
+                                            : items[index].id.toString(),
+                                        child: Icon(
+                                          items[index] is MyFile
+                                              ? fileIcon(
+                                                  (items[index] as MyFile).name)
+                                              : Icons.folder_rounded,
+                                          size: 80,
+                                          color: items[index] is MyFile
+                                              ? fileIconColor(
+                                                  (items[index] as MyFile).name)
+                                              : AppTheme.folderIcon,
+                                        )),
                                   ),
                                 ),
                               );
@@ -611,11 +674,12 @@ class _HomeState extends State<Home> {
                               return ListTile(
                                 leading: Icon(
                                   items[index] is MyFile
-                                      ? Icons.image_outlined
+                                      ? fileIcon((items[index] as MyFile).name)
                                       : Icons.folder_rounded,
                                   color: items[index] is MyFile
-                                      ? Colors.blueGrey
-                                      : Colors.blue,
+                                      ? fileIconColor(
+                                          (items[index] as MyFile).name)
+                                      : AppTheme.folderIcon,
                                   size: 35,
                                 ),
                                 title: Text(

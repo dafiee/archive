@@ -10,6 +10,9 @@ abstract class AppTheme {
   static Color success = Colors.green;
   static Color bubble = Colors.grey.withValues(alpha: .5);
 
+  /// the one color for all folder icons:
+  static const Color folderIcon = Colors.blue;
+
   //text
   static TextStyle normal = TextStyle(
     fontSize: 14,

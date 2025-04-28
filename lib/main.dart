@@ -4,7 +4,8 @@ import 'firebase_options.dart';
 import 'package:archive/config/globals.dart';
 import 'package:archive/config/theme.dart';
 import 'package:archive/screens/home.dart';
-import 'package:archive/screens/login_screen.dart'; 
+import 'package:archive/screens/login_screen.dart';
+import 'package:archive/screens/sign_up_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,13 +26,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-        return MaterialApp(
-          debugShowCheckedModeBanner: false, // <-- this disables the debug banner
-          title: 'Archive App',
-          theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: AppTheme.primary),
-          useMaterial3: true,
-        ),
+    return MaterialApp(
+      debugShowCheckedModeBanner: false, // <-- this disables the debug banner
+      title: 'Archive App',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: AppTheme.primary),
+        useMaterial3: true,
+      ),
       darkTheme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppTheme.primary,
@@ -42,6 +43,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const LoginScreen(),
+        '/signup': (_) => const SignUpScreen(),
         '/home': (context) => const Home(),
       },
     );
