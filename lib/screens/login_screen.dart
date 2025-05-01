@@ -155,33 +155,41 @@ class _LoginScreenState extends State<LoginScreen>
           Positioned.fill(
             child: IgnorePointer(
               child: Center(
-                child: FractionallySizedBox(
-                  widthFactor: 1.0,
-                  heightFactor: 1.0,
-                  child: Stack(
-                    children: _animations.asMap().entries.map((entry) {
-                      final animation = entry.value;
-                      return AnimatedBuilder(
-                        animation: animation,
-                        builder: (context, child) {
-                          return Transform.translate(
-                            offset: Offset(
-                              animation.value.dx *
-                                  MediaQuery.of(context).size.width,
-                              animation.value.dy *
-                                  MediaQuery.of(context).size.height,
-                            ),
-                            child: Opacity(
-                              opacity: 0.6,
-                              child: Icon(Icons.folder,
+                child: Container(
+                  width: 110, // Set your desired width
+                  height: 450, // Set your desired height
+                  alignment: Alignment.center,
+                  color: Colors.transparent, // Optional: helps with debugging
+                  child: FractionallySizedBox(
+                    widthFactor: 1.0,
+                    heightFactor: 1.0,
+                    child: Stack(
+                      children: _animations.asMap().entries.map((entry) {
+                        final animation = entry.value;
+                        return AnimatedBuilder(
+                          animation: animation,
+                          builder: (context, child) {
+                            return Transform.translate(
+                              offset: Offset(
+                                animation.value.dx *
+                                    210, // match container width
+                                animation.value.dy *
+                                    400, // match container height
+                              ),
+                              child: Opacity(
+                                opacity: 0.6,
+                                child: Icon(
+                                  Icons.folder,
                                   size: 30,
                                   // ignore: deprecated_member_use
-                                  color: Colors.amber.withOpacity(0.7)),
-                            ),
-                          );
-                        },
-                      );
-                    }).toList(),
+                                  color: Colors.amber.withOpacity(0.7),
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      }).toList(),
+                    ),
                   ),
                 ),
               ),
@@ -279,7 +287,7 @@ class _LoginScreenState extends State<LoginScreen>
                     style: const TextStyle(color: Colors.white),
                     textInputAction: TextInputAction.done,
                     onSubmitted: (_) =>
-                        loginUser(), // 👈 triggers login on "Enter"
+                        loginUser(), // triggers login on "Enter"
                     decoration: InputDecoration(
                       hintText: "Password",
                       hintStyle: const TextStyle(color: Colors.white54),

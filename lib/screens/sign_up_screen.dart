@@ -394,123 +394,257 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.dispose();
   }
 
+  InputDecoration _inputDecoration(String hint) => InputDecoration(
+        hintText: hint,
+        fillColor: Colors.white12,
+        filled: true,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        hintStyle: const TextStyle(color: Colors.white54),
+      );
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.blue,
+      // body: SafeArea(
+      //   child: Padding(
+      //     padding: const EdgeInsets.symmetric(horizontal: 32),
+      //     child: Column(
+      //       mainAxisAlignment: MainAxisAlignment.center,
+      //       children: [
+      //         // Top cloud mask
+      //         Positioned(
+      //           top: 0,
+      //           left: 0,
+      //           right: 0,
+      //           child: Container(
+      //             height: 250,
+      //             decoration: const BoxDecoration(
+      //               color: Colors.blue,
+      //               borderRadius: BorderRadius.vertical(
+      //                 bottom: Radius.circular(50),
+      //               ),
+      //             ),
+      //             child: Align(
+      //               alignment: Alignment.bottomCenter,
+      //               child: Icon(Icons.cloud, size: 190, color: Colors.white),
+      //             ),
+      //           ),
+      //         ),
+
+      //         const Text(
+      //           "Create an account",
+      //           style: TextStyle(fontSize: 28, color: Colors.white),
+      //         ),
+      //         const SizedBox(height: 24),
+
+      //         // — Email —
+      //         TextField(
+      //           controller: _emailCtl,
+      //           decoration: InputDecoration(
+      //             hintText: "Email",
+      //             fillColor: Colors.white12,
+      //             filled: true,
+      //             border: OutlineInputBorder(
+      //                 borderRadius: BorderRadius.circular(12)),
+      //           ),
+      //           style: const TextStyle(color: Colors.white),
+      //           keyboardType: TextInputType.emailAddress,
+      //           textInputAction: TextInputAction.next,
+      //           onSubmitted: (_) => FocusScope.of(context).nextFocus(),
+      //         ),
+      //         const SizedBox(height: 16),
+
+      //         // — Password —
+      //         TextField(
+      //           controller: _passCtl,
+      //           decoration: InputDecoration(
+      //             hintText: "Password",
+      //             fillColor: Colors.white12,
+      //             filled: true,
+      //             border: OutlineInputBorder(
+      //                 borderRadius: BorderRadius.circular(12)),
+      //           ),
+      //           style: const TextStyle(color: Colors.white),
+      //           obscureText: true,
+      //           textInputAction: TextInputAction.next,
+      //           onSubmitted: (_) => FocusScope.of(context).nextFocus(),
+      //         ),
+      //         const SizedBox(height: 16),
+
+      //         // — Confirm —
+      //         TextField(
+      //           controller: _confirmCtl,
+      //           decoration: InputDecoration(
+      //             hintText: "Confirm password",
+      //             fillColor: Colors.white12,
+      //             filled: true,
+      //             border: OutlineInputBorder(
+      //                 borderRadius: BorderRadius.circular(12)),
+      //           ),
+      //           style: const TextStyle(color: Colors.white),
+      //           obscureText: true,
+      //           textInputAction: TextInputAction.done,
+      //           onSubmitted: (_) => signUp(),
+      //         ),
+
+      //         // — Error Card —
+      //         if (error != null)
+      //           Card(
+      //             color: Colors.red.shade50,
+      //             margin: const EdgeInsets.symmetric(vertical: 12),
+      //             child: Padding(
+      //               padding: const EdgeInsets.all(12),
+      //               child: Row(
+      //                 children: [
+      //                   const Icon(Icons.error_outline, color: Colors.red),
+      //                   const SizedBox(width: 8),
+      //                   Expanded(
+      //                     child: Text(
+      //                       error!,
+      //                       style: const TextStyle(color: Colors.red),
+      //                     ),
+      //                   ),
+      //                 ],
+      //               ),
+      //             ),
+      //           ),
+
+      //         const SizedBox(height: 16),
+
+      //         // — Create Account Button —
+      //         isLoading
+      //             ? const CircularProgressIndicator(color: Colors.white)
+      //             : ElevatedButton(
+      //                 onPressed: signUp,
+      //                 style: ElevatedButton.styleFrom(
+      //                   backgroundColor: Colors.white,
+      //                   foregroundColor: Colors.blue,
+      //                   minimumSize: const Size.fromHeight(50),
+      //                   shape: RoundedRectangleBorder(
+      //                       borderRadius: BorderRadius.circular(12)),
+      //                 ),
+      //                 child: const Text("Create account"),
+      //               ),
+
+      //         const SizedBox(height: 12),
+
+      //         // — Back to Login —
+      //         TextButton(
+      //           onPressed: () => Navigator.pop(context),
+      //           child: const Text(
+      //             "Back to login",
+      //             style: TextStyle(color: Colors.white70),
+      //           ),
+      //         ),
+      //       ],
+      //     ),
+      //   ),
+      // ),
+
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                "Create an account",
-                style: TextStyle(fontSize: 28, color: Colors.white),
-              ),
-              const SizedBox(height: 24),
-
-              // — Email —
-              TextField(
-                controller: _emailCtl,
-                decoration: InputDecoration(
-                  hintText: "Email",
-                  fillColor: Colors.white12,
-                  filled: true,
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                style: const TextStyle(color: Colors.white),
-                keyboardType: TextInputType.emailAddress,
-                textInputAction: TextInputAction.next,
-                onSubmitted: (_) => FocusScope.of(context).nextFocus(),
-              ),
-              const SizedBox(height: 16),
-
-              // — Password —
-              TextField(
-                controller: _passCtl,
-                decoration: InputDecoration(
-                  hintText: "Password",
-                  fillColor: Colors.white12,
-                  filled: true,
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                style: const TextStyle(color: Colors.white),
-                obscureText: true,
-                textInputAction: TextInputAction.next,
-                onSubmitted: (_) => FocusScope.of(context).nextFocus(),
-              ),
-              const SizedBox(height: 16),
-
-              // — Confirm —
-              TextField(
-                controller: _confirmCtl,
-                decoration: InputDecoration(
-                  hintText: "Confirm password",
-                  fillColor: Colors.white12,
-                  filled: true,
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                style: const TextStyle(color: Colors.white),
-                obscureText: true,
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => signUp(),
-              ),
-
-              // — Error Card —
-              if (error != null)
-                Card(
-                  color: Colors.red.shade50,
-                  margin: const EdgeInsets.symmetric(vertical: 12),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.error_outline, color: Colors.red),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            error!,
-                            style: const TextStyle(color: Colors.red),
-                          ),
-                        ),
-                      ],
-                    ),
+        child: Stack(
+          children: [
+            // Cloud Header
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                height: 250,
+                decoration: const BoxDecoration(
+                  color: Colors.blue,
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(50),
                   ),
                 ),
-
-              const SizedBox(height: 16),
-
-              // — Create Account Button —
-              isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : ElevatedButton(
-                      onPressed: signUp,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.blue,
-                        minimumSize: const Size.fromHeight(50),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: const Text("Create account"),
-                    ),
-
-              const SizedBox(height: 12),
-
-              // — Back to Login —
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  "Back to login",
-                  style: TextStyle(color: Colors.white70),
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Icon(Icons.cloud, size: 190, color: Colors.white),
                 ),
               ),
-            ],
-          ),
+            ),
+
+            // Registration form
+            Padding(
+              padding: const EdgeInsets.fromLTRB(32, 270, 32, 32),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const Text(
+                      "Create an account",
+                      style: TextStyle(fontSize: 28, color: Colors.white),
+                    ),
+                    const SizedBox(height: 24),
+                    TextField(
+                      controller: _emailCtl,
+                      decoration: _inputDecoration("Email"),
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _passCtl,
+                      decoration: _inputDecoration("Password"),
+                      obscureText: true,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _confirmCtl,
+                      decoration: _inputDecoration("Confirm password"),
+                      obscureText: true,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    if (error != null) ...[
+                      const SizedBox(height: 12),
+                      Card(
+                        color: Colors.red.shade50,
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.error_outline,
+                                  color: Colors.red),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(error!,
+                                    style: const TextStyle(color: Colors.red)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : ElevatedButton(
+                            onPressed: signUp,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.blue,
+                              minimumSize: const Size.fromHeight(50),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text("Create account"),
+                          ),
+                    const SizedBox(height: 12),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text(
+                        "Back to login",
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
