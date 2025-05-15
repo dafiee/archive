@@ -764,6 +764,8 @@
 
 // // lib/my_widgets/file_view.dart
 
+// ignore_for_file: deprecated_member_use, use_build_context_synchronously
+
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:archive/config/globals.dart';
