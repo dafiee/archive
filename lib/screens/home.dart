@@ -372,7 +372,7 @@ class _HomeState extends State<Home> {
 
   final TextEditingController _filterController = TextEditingController();
 
-  void showContextAction(dynamic item) {
+  void showContextAction(dynamic item, bool isFile) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -380,6 +380,8 @@ class _HomeState extends State<Home> {
       constraints: BoxConstraints(maxHeight: screenSize.height * .5),
       builder: (_) => MyContextMenuSheet(
         item: item,
+        isFile: isFile,
+        rootContext: context,
       ),
     );
   }
@@ -606,8 +608,8 @@ class _HomeState extends State<Home> {
                             itemCount: items.length,
                             itemBuilder: (context, index) {
                               return GestureDetector(
-                                onLongPress: () =>
-                                    showContextAction(items[index]),
+                                onLongPress: () => showContextAction(
+                                    items[index], items[index] is MyFile),
                                 onTap: () {
                                   if (items[index] is MyFile) {
                                     Navigator.push(
@@ -697,8 +699,8 @@ class _HomeState extends State<Home> {
                                         ),
                                       )
                                     : null,
-                                onLongPress: () =>
-                                    showContextAction(items[index]),
+                                onLongPress: () => showContextAction(
+                                    items[index], items[index] is MyFile),
                                 onTap: () {
                                   if (items[index] is MyFile) {
                                     Navigator.push(

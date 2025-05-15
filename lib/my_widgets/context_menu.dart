@@ -1,13 +1,24 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:archive/config/globals.dart';
 import 'package:archive/config/theme.dart';
 import 'package:archive/models/my_file.dart';
 import 'package:archive/my_widgets/alerts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:archive/my_widgets/rename_dialog.dart';
+import 'package:archive/my_widgets/file_utils.dart';
 
 class MyContextMenuSheet extends StatefulWidget {
   final dynamic item;
-  const MyContextMenuSheet({super.key, required this.item});
+  final bool isFile;
+  final BuildContext rootContext;
+  const MyContextMenuSheet(
+      {super.key,
+      required this.item,
+      required this.rootContext,
+      this.isFile = false});
 
   @override
   State<MyContextMenuSheet> createState() => _MyContextMenuSheetState();
@@ -64,14 +75,20 @@ class _MyContextMenuSheetState extends State<MyContextMenuSheet> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          ListTile(
-            onTap: () {
-              Navigator.pop(context);
-            },
-            title: Text("Download"),
-            trailing: Icon(Icons.arrow_right_rounded),
-            leading: Icon(Icons.file_download_rounded),
-          ),
+          if (widget.isFile)
+            ListTile(
+              onTap: () async {
+                Navigator.pop(context);
+                if (!mounted) return;
+                if (widget.item is MyFile) {
+                  if (kDebugMode) print("📲 onTap: Download requested");
+                  await downloadFile(context, widget.item);
+                }
+              },
+              title: const Text("Download"),
+              leading: const Icon(Icons.file_download_rounded),
+              trailing: const Icon(Icons.arrow_right_rounded),
+            ),
           ListTile(
             onTap: () {
               Navigator.pop(context);
@@ -81,12 +98,15 @@ class _MyContextMenuSheetState extends State<MyContextMenuSheet> {
             leading: Icon(Icons.share_rounded),
           ),
           ListTile(
-            onTap: () {
+            onTap: () async {
               Navigator.pop(context);
+              if (widget.item is MyFile) {
+                await renameFile(context, widget.item);
+              }
             },
-            title: Text("Rename"),
-            trailing: Icon(Icons.arrow_right_rounded),
-            leading: Icon(Icons.edit_rounded),
+            title: const Text("Rename"),
+            trailing: const Icon(Icons.arrow_right_rounded),
+            leading: const Icon(Icons.edit_rounded),
           ),
           ListTile(
             onTap: () {

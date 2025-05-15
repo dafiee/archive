@@ -17,6 +17,10 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    debugPrintStack(label: 'Caught error:', stackTrace: details.stack);
+  };
 
   runApp(const MyApp());
 }
@@ -27,7 +31,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false, // <-- this disables the debug banner
+      debugShowCheckedModeBanner: false, // this disables the debug banner
       title: 'Archive App',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: AppTheme.primary),

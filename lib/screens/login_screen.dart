@@ -17,6 +17,7 @@ class _LoginScreenState extends State<LoginScreen>
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool isLoading = false;
+  bool _obscurePassword = true;
   String? error;
 
   final List<AnimationController> _controllers = [];
@@ -24,13 +25,21 @@ class _LoginScreenState extends State<LoginScreen>
   final int _folderCount = 10;
 
   Future<void> signInWithGoogle() async {
+    setState(() {
+      isLoading = true;
+      error = null;
+    });
+
     try {
       if (kIsWeb) {
         GoogleAuthProvider googleProvider = GoogleAuthProvider();
         await FirebaseAuth.instance.signInWithPopup(googleProvider);
       } else {
         final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-        if (googleUser == null) return;
+        if (googleUser == null) {
+          setState(() => isLoading = false);
+          return;
+        }
 
         final GoogleSignInAuthentication googleAuth =
             await googleUser.authentication;
@@ -43,10 +52,14 @@ class _LoginScreenState extends State<LoginScreen>
         await FirebaseAuth.instance.signInWithCredential(credential);
       }
 
-      // ignore: use_build_context_synchronously
+      if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/home');
     } catch (e) {
       setState(() => error = "Google Sign-In failed: $e");
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
   }
 
@@ -142,244 +155,210 @@ class _LoginScreenState extends State<LoginScreen>
     return Scaffold(
       resizeToAvoidBottomInset: true,
       // body: SafeArea(
-      body: Stack(
-        children: [
-          // Background color
-          Container(
-            decoration: const BoxDecoration(
-              color: Colors.blue,
-            ),
-          ),
-
-          // Flying folders
-          Positioned.fill(
-            child: IgnorePointer(
-              child: Center(
+      body: Center(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Top cloud mask
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
                 child: Container(
-                  width: 110, // Set your desired width
-                  height: 450, // Set your desired height
-                  alignment: Alignment.center,
-                  color: Colors.transparent, // Optional: helps with debugging
-                  child: FractionallySizedBox(
-                    widthFactor: 1.0,
-                    heightFactor: 1.0,
-                    child: Stack(
-                      children: _animations.asMap().entries.map((entry) {
-                        final animation = entry.value;
-                        return AnimatedBuilder(
-                          animation: animation,
-                          builder: (context, child) {
-                            return Transform.translate(
-                              offset: Offset(
-                                animation.value.dx *
-                                    210, // match container width
-                                animation.value.dy *
-                                    400, // match container height
-                              ),
-                              child: Opacity(
-                                opacity: 0.6,
-                                child: Icon(
-                                  Icons.folder,
-                                  size: 30,
-                                  // ignore: deprecated_member_use
-                                  color: Colors.amber.withOpacity(0.7),
+                  // height: 0,
+                  decoration: const BoxDecoration(
+                    // color: Colors.blue,
+                    borderRadius: BorderRadius.vertical(
+                      bottom: Radius.circular(50),
+                    ),
+                  ),
+                  child: Align(
+                      alignment: Alignment.bottomCenter,
+                      // child: Icon(Icons.cloud, size: 190, color: Colors.white),
+                      child: Image.asset(
+                        'images/logo.png',
+                        width: 190,
+                        height: 190,
+                        fit: BoxFit.contain,
+                      )),
+                ),
+              ),
+
+              // Welcome text
+              Positioned(
+                // top: 210,
+                left: 0,
+                right: 0,
+                child: Column(
+                  children: const [
+                    SizedBox(height: 50),
+                    Text(
+                      "Welcome to",
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      "Archive",
+                      style: TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.bold,
+                        // color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      "Access your personal cloud storage.",
+                      // style: TextStyle(color: Colors.white70),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+
+              // Login form (with dynamic padding for keyboard)
+              Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Email TextField
+                    TextField(
+                      controller: _emailController,
+                      // style: const TextStyle(color: Colors.white),
+                      textInputAction: TextInputAction.next,
+                      onSubmitted: (_) {
+                        // Move focus to the password field
+                        FocusScope.of(context).nextFocus();
+                      },
+                      decoration: InputDecoration(
+                        labelText: "Email",
+                        // hintStyle: const TextStyle(color: Colors.white54),
+                        filled: true,
+                        fillColor: Colors.white12,
+                        prefixIcon: const Icon(
+                          Icons.email_outlined, /*color: Colors.white*/
+                        ),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Password TextField
+                    TextField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => loginUser(),
+                      decoration: InputDecoration(
+                        labelText: "Password",
+                        filled: true,
+                        fillColor: Colors.white12,
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            // color: Colors.white70,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      // style: const TextStyle(color: Colors.white),
+                    ),
+
+                    // ....
+                    const SizedBox(height: 16),
+                    if (error != null)
+                      Card(
+                        color: Colors.red.shade50,
+                        margin: const EdgeInsets.symmetric(vertical: 12),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.error_outline,
+                                  color: Colors.red),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  error!,
+                                  style: const TextStyle(color: Colors.red),
                                 ),
                               ),
-                            );
-                          },
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          // Top cloud mask
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              height: 250,
-              decoration: const BoxDecoration(
-                color: Colors.blue,
-                borderRadius: BorderRadius.vertical(
-                  bottom: Radius.circular(50),
-                ),
-              ),
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: Icon(Icons.cloud, size: 190, color: Colors.white),
-              ),
-            ),
-          ),
-
-          // Welcome text
-          Positioned(
-            top: 210,
-            left: 0,
-            right: 0,
-            child: Column(
-              children: const [
-                SizedBox(height: 50),
-                Text(
-                  "Welcome to",
-                  style: TextStyle(fontSize: 22, color: Colors.white70),
-                ),
-                Text(
-                  "Archive",
-                  style: TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  "Access your personal cloud storage.",
-                  style: TextStyle(color: Colors.white70),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-
-          // Login form (with dynamic padding for keyboard)
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(
-                32,
-                400,
-                32,
-                MediaQuery.of(context).viewInsets.bottom + 100,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Email TextField
-                  TextField(
-                    controller: _emailController,
-                    style: const TextStyle(color: Colors.white),
-                    textInputAction: TextInputAction.next,
-                    onSubmitted: (_) {
-                      // Move focus to the password field
-                      FocusScope.of(context).nextFocus();
-                    },
-                    decoration: InputDecoration(
-                      hintText: "Email",
-                      hintStyle: const TextStyle(color: Colors.white54),
-                      filled: true,
-                      fillColor: Colors.white12,
-                      prefixIcon:
-                          const Icon(Icons.email_outlined, color: Colors.white),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Password TextField
-                  TextField(
-                    controller: _passwordController,
-                    obscureText: true,
-                    style: const TextStyle(color: Colors.white),
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) =>
-                        loginUser(), // triggers login on "Enter"
-                    decoration: InputDecoration(
-                      hintText: "Password",
-                      hintStyle: const TextStyle(color: Colors.white54),
-                      filled: true,
-                      fillColor: Colors.white12,
-                      prefixIcon:
-                          const Icon(Icons.lock_outline, color: Colors.white),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-
-                  // ....
-                  const SizedBox(height: 16),
-                  if (error != null)
-                    Card(
-                      color: Colors.red.shade50,
-                      margin: const EdgeInsets.symmetric(vertical: 12),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.error_outline, color: Colors.red),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                error!,
-                                style: const TextStyle(color: Colors.red),
+                            ],
+                          ),
+                        ),
+                      ),
+                    // Login button
+                    const SizedBox(height: 16),
+                    isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : ElevatedButton(
+                            onPressed: loginUser,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.blue,
+                              minimumSize: const Size.fromHeight(50),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                          ],
-                        ),
+                            child: const Text("Login"),
+                          ),
+                    const SizedBox(height: 20),
+                    ElevatedButton.icon(
+                      onPressed: signInWithGoogle,
+                      icon: Image.asset('images/google_logo.png',
+                          height: 24, width: 24),
+                      label: const Text("Sign in with Google"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black,
+                        minimumSize: const Size.fromHeight(50),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
-                  // Login button
-                  const SizedBox(height: 16),
-                  isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : ElevatedButton(
-                          onPressed: loginUser,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.blue,
-                            minimumSize: const Size.fromHeight(50),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: const Text("Login"),
-                        ),
-                  const SizedBox(height: 20),
-                  ElevatedButton.icon(
-                    onPressed: signInWithGoogle,
-                    icon: Image.asset('images/google_logo.png',
-                        height: 24, width: 24),
-                    label: const Text("Sign in with Google"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black,
-                      minimumSize: const Size.fromHeight(50),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
+                    const SizedBox(height: 8),
 
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        "Don’t have an account?",
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/signup');
-                        },
-                        child: const Text(
-                          "Sign up",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                    // Row(
+                    //   mainAxisAlignment: MainAxisAlignment.center,
+                    //   children: [
+                    //     const Text(
+                    //       "Don’t have an account?",
+                    //       // style: TextStyle(color: Colors.white70),
+                    //     ),
+                    //     TextButton(
+                    //       onPressed: () {
+                    //         Navigator.pushNamed(context, '/signup');
+                    //       },
+                    //       child: const Text(
+                    //         "Sign up",
+                    //         style: TextStyle(
+                    //           // color: Colors.white,
+                    //           fontWeight: FontWeight.bold,
+                    //         ),
+                    //       ),
+                    //     ),
+                    //   ],
+                    // ),
+                  ],
+                ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
       //),
     );

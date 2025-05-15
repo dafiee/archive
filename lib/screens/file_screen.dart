@@ -11,7 +11,9 @@ import 'package:archive/screens/empty_screen.dart';
 import 'package:archive/screens/error_screen.dart';
 import 'package:archive/screens/file_form.dart';
 import 'package:archive/screens/loading_screen.dart';
+import 'package:archive/screens/login_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
@@ -88,7 +90,7 @@ class _FileScreenState extends State<FileScreen> {
   List<CollectionReference> docFolders = [];
   List<MyFile> files = [];
 
-  void showContextAction(dynamic item) {
+  void showContextAction(dynamic item, bool isFile) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -96,6 +98,8 @@ class _FileScreenState extends State<FileScreen> {
       constraints: BoxConstraints(maxHeight: screenSize.height * .5),
       builder: (_) => MyContextMenuSheet(
         item: item,
+        isFile: isFile,
+        rootContext: context,
       ),
     );
   }
@@ -115,6 +119,32 @@ class _FileScreenState extends State<FileScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> renameFile(BuildContext context, MyFile file) async {
+    final controller = TextEditingController(text: file.name);
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Rename File"),
+        content: TextField(controller: controller),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+              child: const Text("Rename")),
+        ],
+      ),
+    );
+
+    if (newName != null && newName != file.name) {
+      // await file.ref.update({'name': newName});
+      await file.reference?.update({'name': newName});
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("File renamed.")));
+    }
   }
 
   @override
@@ -147,6 +177,18 @@ class _FileScreenState extends State<FileScreen> {
             itemBuilder: (context) => [
               PopupMenuItem(
                 child: ListTile(
+                  onTap: () async {
+                    await FirebaseAuth.instance.signOut();
+                    // ignore: use_build_context_synchronously
+                    // Navigator.pushReplacementNamed(context, '/');
+                    Navigator.pushAndRemoveUntil(
+                        // ignore: use_build_context_synchronously
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const LoginScreen(),
+                        ),
+                        (route) => false);
+                  },
                   visualDensity: VisualDensity.compact,
                   leading: Icon(
                     Icons.power_settings_new_rounded,
@@ -229,8 +271,8 @@ class _FileScreenState extends State<FileScreen> {
                             itemCount: items.length,
                             itemBuilder: (context, index) {
                               return GestureDetector(
-                                onLongPress: () =>
-                                    showContextAction(items[index]),
+                                onLongPress: () => showContextAction(
+                                    items[index], items[index] is MyFile),
                                 onTap: () {
                                   if (items[index] is MyFile) {
                                     Navigator.push(
@@ -322,8 +364,8 @@ class _FileScreenState extends State<FileScreen> {
                                         ),
                                       )
                                     : null,
-                                onLongPress: () =>
-                                    showContextAction(items[index]),
+                                onLongPress: () => showContextAction(
+                                    items[index], items[index] is MyFile),
                                 onTap: () {
                                   if (items[index] is MyFile) {
                                     Navigator.push(
