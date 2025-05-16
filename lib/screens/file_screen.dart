@@ -89,6 +89,11 @@ class _FileScreenState extends State<FileScreen> {
   List<QueryDocumentSnapshot> folderList = [];
   List<CollectionReference> docFolders = [];
   List<MyFile> files = [];
+  final TextEditingController _filterController = TextEditingController();
+  List items = [];
+  List originalItems = [];
+  // String folderPath = "Loading...";
+  String? folderPath;
 
   void showContextAction(dynamic item, bool isFile) {
     showModalBottomSheet(
@@ -102,6 +107,23 @@ class _FileScreenState extends State<FileScreen> {
         rootContext: context,
       ),
     );
+  }
+
+  void filter(String? keyword) {
+    setState(() {
+      if (keyword != null && keyword.isNotEmpty) {
+        items = originalItems.where((item) {
+          if (item is MyFile) {
+            return item.name.toLowerCase().contains(keyword.toLowerCase());
+          } else if (item is CollectionReference) {
+            return item.id.toLowerCase().contains(keyword.toLowerCase());
+          }
+          return false;
+        }).toList();
+      } else {
+        items = originalItems;
+      }
+    });
   }
 
   void createFile({bool withFolder = false, CollectionReference? reference}) {
@@ -119,6 +141,78 @@ class _FileScreenState extends State<FileScreen> {
         ),
       ),
     );
+  }
+
+  /// Returns the path of the folder in a human-readable format.
+  Future<String> getFolderPath(CollectionReference folder) async {
+    List<String> parts = [];
+    CollectionReference? current = folder;
+
+    while (current != null) {
+      parts.insert(0, current.id);
+      final parentDoc = current.parent;
+      if (parentDoc != null) {
+        current = parentDoc.parent;
+      } else {
+        current = null;
+      }
+    }
+
+    parts[0] = "Home"; // rename Firestore root collection to 'Home'
+
+    // Truncate if too long
+    if (parts.length > 3) {
+      return "${parts.first} > … > ${parts.last}";
+    }
+    return parts.join(" > ");
+  }
+
+  Future<void> showFileOptions(BuildContext context, MyFile file) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("File Options"),
+        content: Text("What do you want to do with ${file.name}?"),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text("Cancel")),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text("Delete")),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      deleteFile(context, file);
+    }
+  }
+
+  Future<void> deleteFile(BuildContext context, MyFile file) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Delete File"),
+        content: Text("Are you sure you want to delete ${file.name}?"),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text("Cancel")),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text("Delete")),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      // await file.ref.delete();
+      await file.reference?.delete();
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("File deleted.")));
+    }
   }
 
   Future<void> renameFile(BuildContext context, MyFile file) async {
@@ -145,6 +239,17 @@ class _FileScreenState extends State<FileScreen> {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text("File renamed.")));
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    getFolderPath(widget.folder).then((path) {
+      setState(() {
+        folderPath = path;
+      });
+    });
   }
 
   @override
@@ -207,8 +312,10 @@ class _FileScreenState extends State<FileScreen> {
       body: Column(
         children: [
           MyInput(
+            controller: _filterController,
+            hint: "Search in: ${folderPath ?? widget.folder.id}",
             prefix: Icons.search_rounded,
-            hint: "Type your search keyword",
+            onChange: filter,
           ),
           Expanded(
             child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -255,9 +362,28 @@ class _FileScreenState extends State<FileScreen> {
                     return EmptyScreen();
                   }
 
-                  List items = [];
-                  items.addAll(docFolders);
-                  items.addAll(files);
+                  // List items = [];
+                  // items.addAll(docFolders);
+                  // items.addAll(files);
+
+                  originalItems.clear();
+                  originalItems.addAll(docFolders);
+                  originalItems.addAll(files);
+
+                  if (_filterController.text.isEmpty) {
+                    items = originalItems;
+                  }
+
+                  if (items.isEmpty) {
+                    return const Expanded(
+                      child: Center(
+                        child: Text(
+                          "No files or folders match your search.",
+                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                        ),
+                      ),
+                    );
+                  }
 
                   return Column(
                     children: [

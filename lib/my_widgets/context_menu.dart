@@ -89,13 +89,25 @@ class _MyContextMenuSheetState extends State<MyContextMenuSheet> {
               leading: const Icon(Icons.file_download_rounded),
               trailing: const Icon(Icons.arrow_right_rounded),
             ),
+          // ListTile(
+          //   onTap: () {
+          //     Navigator.pop(context);
+          //   },
+          //   title: Text("Share"),
+          //   trailing: Icon(Icons.arrow_right_rounded),
+          //   leading: Icon(Icons.share_rounded),
+          // ),
           ListTile(
-            onTap: () {
-              Navigator.pop(context);
+            onTap: () async {
+              Navigator.pop(context); // Close the context menu
+              if (widget.item is MyFile) {
+                await shareFile(
+                    widget.rootContext, widget.item); // Pass correct arguments
+              }
             },
-            title: Text("Share"),
-            trailing: Icon(Icons.arrow_right_rounded),
-            leading: Icon(Icons.share_rounded),
+            title: const Text("Share"),
+            trailing: const Icon(Icons.arrow_right_rounded),
+            leading: const Icon(Icons.share_rounded),
           ),
           ListTile(
             onTap: () async {

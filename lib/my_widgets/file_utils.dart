@@ -6,6 +6,8 @@ import 'package:dio/dio.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:archive/models/my_file.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
 
 Future<void> downloadFile(BuildContext context, MyFile file) async {
   try {
@@ -68,4 +70,55 @@ Future<void> downloadFile(BuildContext context, MyFile file) async {
 // Function to sanitize file names
 String sanitizeFileName(String name) {
   return name.replaceAll(RegExp(r'''[\/\\:*?"<>|']'''), '_');
+}
+
+// Future<void> shareFile(MyFile file) async {
+//   try {
+//     final tempDir = await getTemporaryDirectory();
+//     final tempPath = '${tempDir.path}/${sanitizeFileName(file.name)}';
+
+//     await Dio().download(file.path, tempPath);
+
+//     await Share.shareXFiles(
+//       [XFile(tempPath)],
+//       text: 'Sharing: ${file.name}',
+//     );
+//   } catch (e) {
+//     debugPrint("❌ Share error: $e");
+//   }
+// }
+
+Future<void> shareFile(BuildContext context, MyFile file) async {
+  try {
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    // Create temp directory
+    final tempDir = await getTemporaryDirectory();
+    final tempPath = '${tempDir.path}/${sanitizeFileName(file.name)}';
+
+    // Download file
+    await Dio().download(file.path, tempPath);
+
+    // Dismiss loading dialog before opening share sheet
+    Navigator.of(context).pop();
+
+    // Share the file
+    await Share.shareXFiles(
+      [XFile(tempPath)],
+      text: 'Sharing: ${file.name}',
+    );
+  } catch (e) {
+    debugPrint("❌ Share error: $e");
+    if (context.mounted) {
+      Navigator.of(context).pop(); // Ensure dialog is closed on error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Share failed: $e")),
+      );
+    }
+  }
 }
