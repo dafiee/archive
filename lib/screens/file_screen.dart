@@ -1,4 +1,4 @@
-// ignore_for_file: curly_braces_in_flow_control_structures
+// ignore_for_file: curly_braces_in_flow_control_structures, use_build_context_synchronously
 
 import 'package:archive/config/globals.dart';
 import 'package:archive/config/theme.dart';
@@ -209,7 +209,6 @@ class _FileScreenState extends State<FileScreen> {
     if (confirm == true) {
       // await file.ref.delete();
       await file.reference?.delete();
-      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text("File deleted.")));
     }
@@ -235,7 +234,6 @@ class _FileScreenState extends State<FileScreen> {
     if (newName != null && newName != file.name) {
       // await file.ref.update({'name': newName});
       await file.reference?.update({'name': newName});
-      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text("File renamed.")));
     }
@@ -284,10 +282,8 @@ class _FileScreenState extends State<FileScreen> {
                 child: ListTile(
                   onTap: () async {
                     await FirebaseAuth.instance.signOut();
-                    // ignore: use_build_context_synchronously
                     // Navigator.pushReplacementNamed(context, '/');
                     Navigator.pushAndRemoveUntil(
-                        // ignore: use_build_context_synchronously
                         context,
                         MaterialPageRoute(
                           builder: (_) => const LoginScreen(),
