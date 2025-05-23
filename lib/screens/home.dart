@@ -9,8 +9,8 @@ import 'package:archive/my_widgets/file_view.dart';
 import 'package:archive/my_widgets/input.dart';
 import 'package:archive/screens/empty_screen.dart';
 import 'package:archive/screens/error_screen.dart';
-import 'package:archive/screens/file_form.dart';
-import 'package:archive/screens/file_screen.dart';
+import 'package:archive/screens/file_form.dart' as fileForm;
+import 'package:archive/screens/file_screen.dart' as fileScreen;
 import 'package:archive/screens/loading_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -56,7 +56,7 @@ class _HomeState extends State<Home> {
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
-        child: FileForm(
+        child: fileForm.FileForm(
           withFolder: withFolder,
         ),
       ),
@@ -206,7 +206,24 @@ class _HomeState extends State<Home> {
           ),
           Expanded(
             child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-              stream: MyFile.getRef().snapshots(),
+              // stream: MyFile.getRef()
+              //     .where('uid',
+              //         isEqualTo: FirebaseAuth
+              //             .instance.currentUser?.uid) // Filter by user ID
+              //     .snapshots(),
+              stream: () {
+                final user = FirebaseAuth.instance.currentUser;
+                if (user == null) {
+                  print("No user is authenticated.");
+                } else {
+                  print("Authenticated user UID: ${user.uid}");
+                }
+
+                return MyFile.getRef()
+                    .where('userID',
+                        isEqualTo: user?.uid) // 🔄 Changed 'uid' → 'userID'
+                    .snapshots();
+              }(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return ErrorScreen(
@@ -249,7 +266,7 @@ class _HomeState extends State<Home> {
                     return const EmptyScreen();
                   }
 
-                  // Clear the originalItems list and add the new itemsed
+                  // Clear the originalItems list and add the new items
                   originalItems.clear();
                   originalItems.addAll(docFolders);
                   originalItems.addAll(files);
@@ -299,7 +316,7 @@ class _HomeState extends State<Home> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (_) => FileScreen(
+                                        builder: (_) => fileScreen.FileScreen(
                                           folder: items[index],
                                         ),
                                       ),
@@ -390,7 +407,7 @@ class _HomeState extends State<Home> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (_) => FileScreen(
+                                        builder: (_) => fileScreen.FileScreen(
                                           folder: items[index],
                                         ),
                                       ),
@@ -416,6 +433,217 @@ class _HomeState extends State<Home> {
                 return const LoadingScreen();
               },
             ),
+            // child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+            //   stream: MyFile.getRef().snapshots(),
+            //   builder: (context, snapshot) {
+            //     if (snapshot.hasError) {
+            //       return ErrorScreen(
+            //         errorMessage: snapshot.error.toString(),
+            //       );
+            //     }
+
+            //     if (snapshot.hasData) {
+            //       List<QueryDocumentSnapshot> docs = snapshot.data!.docs;
+
+            //       folderList = docs
+            //           .where((doc) => doc.id == MyFile.baseSubFolderName)
+            //           .toList();
+
+            //       QueryDocumentSnapshot? folderDoc =
+            //           folderList.isNotEmpty ? folderList.first : null;
+
+            //       if (folderDoc != null) {
+            //         List docFolderString =
+            //             folderDoc.get(MyFile.baseSubFolderName);
+            //         docFolders = List.generate(
+            //           docFolderString.length,
+            //           (index) => folderDoc.reference
+            //               .collection(docFolderString[index].toString()),
+            //         );
+            //       }
+
+            //       docs.removeWhere(
+            //         (item) => item.id == MyFile.baseSubFolderName,
+            //       );
+
+            //       files = List.generate(docs.length, (index) {
+            //         return MyFile.fromMap(
+            //           docs[index].data() as Map<String, dynamic>,
+            //           docs[index].reference,
+            //         );
+            //       });
+
+            //       if (files.isEmpty && docFolders.isEmpty) {
+            //         return const EmptyScreen();
+            //       }
+
+            //       // Clear the originalItems list and add the new itemsed
+            //       originalItems.clear();
+            //       originalItems.addAll(docFolders);
+            //       originalItems.addAll(files);
+
+            //       // Only update 'items' if the user is NOT searching
+            //       if (_filterController.text.isEmpty) {
+            //         items = originalItems;
+            //       }
+
+            //       if (items.isEmpty) {
+            //         return const Expanded(
+            //           child: Center(
+            //             child: Text(
+            //               "No files or folders match your search.",
+            //               style: TextStyle(fontSize: 16, color: Colors.grey),
+            //             ),
+            //           ),
+            //         );
+            //       }
+
+            //       return Column(
+            //         children: [
+            //           if (!viewAsList)
+            //             Expanded(
+            //               child: GridView.builder(
+            //                 gridDelegate:
+            //                     const SliverGridDelegateWithFixedCrossAxisCount(
+            //                   crossAxisCount: 3,
+            //                 ),
+            //                 itemCount: items.length,
+            //                 itemBuilder: (context, index) {
+            //                   return GestureDetector(
+            //                     onLongPress: () => showContextAction(
+            //                         items[index], items[index] is MyFile),
+            //                     onTap: () {
+            //                       if (items[index] is MyFile) {
+            //                         Navigator.push(
+            //                           context,
+            //                           MaterialPageRoute(
+            //                             builder: (_) => FileView(
+            //                               file: items[index],
+            //                             ),
+            //                           ),
+            //                         );
+            //                       } else if (items[index]
+            //                           is CollectionReference) {
+            //                         Navigator.push(
+            //                           context,
+            //                           MaterialPageRoute(
+            //                             builder: (_) => fileScreen.FileScreen(
+            //                               folder: items[index],
+            //                             ),
+            //                           ),
+            //                         );
+            //                       } else {
+            //                         alert(
+            //                           context,
+            //                           "Non registered type Collection nor MyFile",
+            //                         );
+            //                       }
+            //                     },
+            //                     child: GridTile(
+            //                       footer: Center(
+            //                         child: Text(
+            //                           items[index] is MyFile
+            //                               ? items[index].name.toString()
+            //                               : items[index].id.toString(),
+            //                         ),
+            //                       ),
+            //                       child: Padding(
+            //                         padding: const EdgeInsets.all(8.0),
+            //                         child: Hero(
+            //                             tag: items[index] is MyFile
+            //                                 ? items[index].name.toString()
+            //                                 : items[index].id.toString(),
+            //                             child: Icon(
+            //                               items[index] is MyFile
+            //                                   ? fileIcon(
+            //                                       (items[index] as MyFile).name)
+            //                                   : Icons.folder_rounded,
+            //                               size: 80,
+            //                               color: items[index] is MyFile
+            //                                   ? fileIconColor(
+            //                                       (items[index] as MyFile).name)
+            //                                   : AppTheme.folderIcon,
+            //                             )),
+            //                       ),
+            //                     ),
+            //                   );
+            //                 },
+            //               ),
+            //             ),
+            //           if (viewAsList)
+            //             Expanded(
+            //               child: ListView.builder(
+            //                 itemCount: items.length,
+            //                 itemBuilder: (context, index) {
+            //                   return ListTile(
+            //                     leading: Icon(
+            //                       items[index] is MyFile
+            //                           ? fileIcon((items[index] as MyFile).name)
+            //                           : Icons.folder_rounded,
+            //                       color: items[index] is MyFile
+            //                           ? fileIconColor(
+            //                               (items[index] as MyFile).name)
+            //                           : AppTheme.folderIcon,
+            //                       size: 35,
+            //                     ),
+            //                     title: Text(
+            //                       items[index] is MyFile
+            //                           ? items[index].name.toString()
+            //                           : items[index].id.toString(),
+            //                     ),
+            //                     subtitle: items[index] is MyFile
+            //                         ? Text(
+            //                             (items[index].timestamp as DateTime)
+            //                                 .formatDate(),
+            //                             style: TextStyle(
+            //                               color: AppTheme.bubble,
+            //                               fontSize: 12,
+            //                             ),
+            //                           )
+            //                         : null,
+            //                     onLongPress: () => showContextAction(
+            //                         items[index], items[index] is MyFile),
+            //                     onTap: () {
+            //                       if (items[index] is MyFile) {
+            //                         Navigator.push(
+            //                           context,
+            //                           MaterialPageRoute(
+            //                             builder: (_) => FileView(
+            //                               file: items[index],
+            //                             ),
+            //                           ),
+            //                         );
+            //                       } else if (items[index]
+            //                           is CollectionReference) {
+            //                         Navigator.push(
+            //                           context,
+            //                           MaterialPageRoute(
+            //                             builder: (_) => fileScreen.FileScreen(
+            //                               folder: items[index],
+            //                             ),
+            //                           ),
+            //                         );
+            //                       } else {
+            //                         alert(
+            //                           context,
+            //                           "Non registered type Collection nor MyFile",
+            //                         );
+            //                       }
+            //                     },
+            //                     trailing: items[index] is MyFile
+            //                         ? null
+            //                         : const Icon(Icons.chevron_right_rounded),
+            //                   );
+            //                 },
+            //               ),
+            //             ),
+            //         ],
+            //       );
+            //     }
+
+            //     return const LoadingScreen();
+            //   },
+            // ),
           ),
         ],
       ),

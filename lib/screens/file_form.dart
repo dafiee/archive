@@ -10,6 +10,7 @@ import 'package:archive/my_widgets/button.dart';
 import 'package:archive/my_widgets/input.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
@@ -30,6 +31,63 @@ class FileForm extends StatefulWidget {
   State<FileForm> createState() => _FileFormState();
 }
 
+class FileScreen extends StatefulWidget {
+  @override
+  _FileScreenState createState() => _FileScreenState();
+}
+
+class _FileScreenState extends State<FileScreen> {
+  List<Map<String, dynamic>> userFiles = []; // Variable to store user files
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserFiles();
+  }
+
+  Future<void> _loadUserFiles() async {
+    try {
+      final files = await getUserFiles();
+      setState(() {
+        userFiles = files;
+      });
+    } catch (e) {
+      print("Error loading files: $e");
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getUserFiles() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw Exception("User not authenticated");
+
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('files')
+        .where('uid', isEqualTo: user.uid)
+        .get();
+
+    return querySnapshot.docs.map((doc) => doc.data()).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("My Files"),
+      ),
+      body: ListView.builder(
+        itemCount: userFiles.length, // Use the length of the userFiles list
+        itemBuilder: (context, index) {
+          final file = userFiles[index];
+          return ListTile(
+            title: Text(file['fileName']),
+            subtitle: Text(file['downloadUrl']),
+          );
+        },
+      ),
+    );
+  }
+}
+
 class _FileFormState extends State<FileForm> {
   final GlobalKey<FormState> _fileKey = GlobalKey<FormState>();
   final _folderCtrl = TextEditingController();
@@ -37,6 +95,8 @@ class _FileFormState extends State<FileForm> {
   Set<File> files = {};
   Set<File> uploadedFiles = {};
   double progress = 0.0;
+
+  List<Map<String, dynamic>> userFiles = [];
 
   /// Show a non-dismissible progress dialog.
   void _showProgressDialog() {
@@ -71,11 +131,40 @@ class _FileFormState extends State<FileForm> {
   }
 
   /// Upload a single file, updating `progress`.
+  // Future<String?> upload(File file) async {
+  //   try {
+  //     final ref = storage.ref().child('files/${p.basename(file.path)}');
+  //     final task = ref.putFile(file);
+
+  //     task.snapshotEvents.listen((snap) {
+  //       setState(() {
+  //         progress = snap.totalBytes > 0
+  //             ? snap.bytesTransferred / snap.totalBytes
+  //             : 0.0;
+  //         if (snap.state == TaskState.success) {
+  //           uploadedFiles.add(file);
+  //         }
+  //       });
+  //     });
+
+  //     final snapshot = await task.whenComplete(() {});
+  //     return await snapshot.ref.getDownloadURL();
+  //   } on FirebaseException catch (e) {
+  //     alertFunction(context, "Upload failed: ${e.message}", () {
+  //       Navigator.of(context).pop(); // dismiss
+  //     });
+  //     return null;
+  //   }
+  // }
+
   Future<String?> upload(File file) async {
     try {
-      final ref = storage.ref().child('files/${p.basename(file.path)}');
-      final task = ref.putFile(file);
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) throw Exception("User not authenticated");
 
+      final ref =
+          storage.ref().child('files/${user.uid}/${p.basename(file.path)}');
+      final task = ref.putFile(file);
       task.snapshotEvents.listen((snap) {
         setState(() {
           progress = snap.totalBytes > 0
@@ -86,7 +175,6 @@ class _FileFormState extends State<FileForm> {
           }
         });
       });
-
       final snapshot = await task.whenComplete(() {});
       return await snapshot.ref.getDownloadURL();
     } on FirebaseException catch (e) {
@@ -95,6 +183,44 @@ class _FileFormState extends State<FileForm> {
       });
       return null;
     }
+  }
+
+  Future<void> saveFileMetadata(String downloadUrl, String fileName) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw Exception("User not authenticated");
+
+    final fileRef = FirebaseFirestore.instance.collection('files').doc();
+    await fileRef.set({
+      'userID': user.uid,
+      'fileName': fileName,
+      'downloadUrl': downloadUrl,
+      'uploadedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> getUserFiles() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw Exception("User not authenticated");
+
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('files')
+        .where('uid', isEqualTo: user.uid)
+        .get();
+
+    return querySnapshot.docs.map((doc) => doc.data()).toList();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserFiles();
+  }
+
+  Future<void> _loadUserFiles() async {
+    final files = await getUserFiles();
+    setState(() {
+      userFiles = files;
+    });
   }
 
   /// Main save() entrypoint: handles both folder and file branches.
@@ -146,9 +272,16 @@ class _FileFormState extends State<FileForm> {
         final url = await upload(file);
         if (url == null) throw Exception("Upload failed for ${file.path}");
 
+        // final myFile = MyFile(
+        //   name: p.basename(file.path),
+        //   path: url,
+        //   timestamp: DateTime.now(),
+        // );
+        final user = FirebaseAuth.instance.currentUser!;
         final myFile = MyFile(
           name: p.basename(file.path),
           path: url,
+          userID: user.uid,
           timestamp: DateTime.now(),
         );
 
